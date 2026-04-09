@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  DONE
+}
+
+model User {
+  id                   String     @id @default(uuid())
+  name                 String
+  email                String     @unique
+  password             String
+  photo                String?
+  dateOfBirth          DateTime?
+  role                 UserRole   @default(USER)
+  status               UserStatus @default(ACTIVE)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  assignedTasks        Task[]     @relation("AssignedTo")
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  status      TaskStatus @default(PENDING)
+  
+  assignedTo  User?      @relation("AssignedTo", fields: [userId], references: [id])
+  userId      String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("tasks")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  entity    String   // e.g., 'TASK'
+  entityId  String   // e.g., task.id
+  
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
